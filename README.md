@@ -1,0 +1,3 @@
+# Wireless Sensor Network Diagnostic Applicaton
+
+The Shakoor Lab is building a web application dashboard diagnostics tool to monitor the health and signal of our sensors in our Wireless Sensor Network. This tool will be used to monitor our sensors to make sure the health, signal, and position of our sensors is adequate in our field trials. This tool will continuously ingests live sensor data from PheNode, securely fetching fresh readings every hour, and storing both metadata and time-series measurements in a MongoDB database. This web application dashboard will display each sensor’s current status and historical trends, with data being able to be retrieved and compared at a moments notice.
