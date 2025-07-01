@@ -214,7 +214,14 @@ export default function HourlyTable() {
     footer: label,
     accessorKey: `h${idx.toString().padStart(2, '0')}`,
     meta: { style: { minWidth: 100 } },
+    // 👇 idx is closed over, so every column keeps its own hour number
     cell: ({ getValue }) => {
+      // any column **after** 5 AM (i.e. 6 AM and later) shows Pending
+      if (idx > 5) {
+        return <Chip color="info" label="Pending" size="small" variant="light" />;
+      }
+
+      // original logic for the 12 AM – 5 AM columns
       const val = getValue();
       return val === 'Reported' ? (
         <Chip color="success" label="Reported" size="small" variant="light" />
