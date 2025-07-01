@@ -5,17 +5,20 @@ import Chip from '@mui/material/Chip';
 
 // project import
 import MainCard from 'components/MainCard';
-import HourlyTable from 'components/tables/Hourly';
+import HourlyTable from 'sections/selected-field/tables/Hourly';
 
-import UserActivity from 'sections/widget/data/UserActivity';
-import UniqueVisitorCard from 'sections/dashboard/default/UniqueVisitorCard';
-import ApexPieChart from 'sections/charts/apexchart/ApexPieChart';
+import SensorActivityList from 'sections/selected-field/list/SensorActivityList';
+import ApexPieChart from 'sections/selected-field/apexchart/ApexPieChart';
+import SignalStrengthOverviewCard from 'sections/selected-field/rssi_snr/SignalStrengthOverviewCard';
+import Map from 'sections/selected-field/mapping/map';
 
 // ==============================|| SAMPLE PAGE ||============================== //
 
 export default function SamplePage() {
   return (
     <div>
+      <Typography variant="h3">Climate Smart</Typography>
+      <br />
       <Grid container spacing={2}>
         <Grid item xs={12} md={6} xl={4}>
           <MainCard title="% Reporting (75 total)">
@@ -23,7 +26,7 @@ export default function SamplePage() {
           </MainCard>
         </Grid>
         <Grid item xs={12} md={6} lg={8}>
-          <UserActivity />
+          <SensorActivityList />
         </Grid>
       </Grid>
       <br />
@@ -82,7 +85,14 @@ export default function SamplePage() {
           </Typography>
         </MainCard>
         <br />
-        <UniqueVisitorCard />
+        <SignalStrengthOverviewCard />
+      </Grid>
+      <br />
+      <br />
+      <Typography variant="h2">Sensor Mapping</Typography>
+      <br />
+      <Grid item xs={12} md={7} lg={8}>
+        <Map />
       </Grid>
     </div>
   );
