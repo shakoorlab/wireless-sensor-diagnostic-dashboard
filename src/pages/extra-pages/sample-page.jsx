@@ -5,7 +5,7 @@ import Chip from '@mui/material/Chip';
 
 // project import
 import MainCard from 'components/MainCard';
-import HourlyTable from 'sections/selected-field/tables/Hourly';
+import HourlyTable from 'sections/selected-field/tables/sensor_head/Hourly';
 
 import SensorActivityList from 'sections/selected-field/list/SensorActivityList';
 import ApexPieChart from 'sections/selected-field/apexchart/ApexPieChart';
