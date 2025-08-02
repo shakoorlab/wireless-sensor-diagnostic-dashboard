@@ -1,7 +1,4 @@
-// injest.js script for one-time ingestion of sensor data from Phenode API
-// This script connects to the MongoDB, fetches sensor data from the Phenode API,
-// and stores it in the Sensor and SensorReading collections.
-// It can be run manually or scheduled via cron.
+#!/usr/bin/env node
 import 'dotenv/config';
 import connectDB from '../config/db.js';
 import Sensor from '../models/Sensor.js';
@@ -16,51 +13,29 @@ export default async function ingestOnce() {
   console.log(`[Ingest] Fetched ${sensorsArr.length} sensors`);
 
   await Promise.all(
-    sensorsArr.map(async (raw) => {
-      const { externalSensorId, label, location, soilProbesConnected, battery, lastMeasurement, soilSensors, gasSensor, lux } = raw;
+    sensorsArr.map(async ({ sensorId, label, data }) => {
+      const { latitude, longitude, _time, ...metrics } = data || {};
+      const lastMeasurement = _time ? new Date(_time) : null;
 
-      /* ───── 1) upsert static “Sensor” doc ───────────────────────────── */
-      const fields = {
-        label,
-        soilProbesConnected,
-        battery,
-        lastMeasurement,
-        latestReadingSummary: {
-          lux,
-          batteryPercent: battery?.batteryPercent
-        }
-      };
-
-      if (location && location.latitude != null && location.longitude != null && !isNaN(location.latitude) && !isNaN(location.longitude)) {
-        fields.location = {
-          type: 'Point',
-          coordinates: [location.longitude, location.latitude]
-        };
+      /* 1. upsert static Sensor document (string id) */
+      const sensorFields = { label, lastMeasurement };
+      if (latitude != null && longitude != null && !isNaN(latitude) && !isNaN(longitude)) {
+        sensorFields.location = { type: 'Point', coordinates: [longitude, latitude] };
       }
 
-      const sensorDoc = await Sensor.findOneAndUpdate(
-        { externalSensorId },
-        { $set: fields },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      );
+      await Sensor.findOneAndUpdate({ sensorId }, { $set: sensorFields }, { upsert: true, new: false, setDefaultsOnInsert: true });
 
-      /* ───── 2) append to SensorReading time-series (insert-only) ────── */
-      if (!lastMeasurement) return; // nothing to store
+      /* 2. insert time-series reading (insert-only) */
+      if (!lastMeasurement) return;
 
-      const ts = new Date(lastMeasurement);
-
-      // Fast existence check; uses meta (sensorId) + time index automatically
-      const exists = await SensorReading.exists({ sensorId: sensorDoc._id, ts });
-      if (exists) return; // already have this hour’s row
+      const ts = lastMeasurement;
+      const exists = await SensorReading.exists({ sensorId, ts });
+      if (exists) return; // already stored
 
       await SensorReading.insertOne({
-        sensorId: sensorDoc._id,
+        sensorId,
         ts,
-        soilSensors,
-        gasSensor,
-        lux,
-        batteryVoltage: battery?.batteryVoltage,
-        batteryPercent: battery?.batteryPercent
+        ...metrics // rssi, snr, lux, etc.
       });
     })
   );
@@ -68,7 +43,7 @@ export default async function ingestOnce() {
   console.log('[Ingest] ✅  Finished');
 }
 
-/* ─── self-invoke when run directly ───────────────────────────────── */
+/* self-invoke when run directly */
 const __filename = fileURLToPath(import.meta.url);
 if (process.argv[1] === __filename) {
   (async () => {
