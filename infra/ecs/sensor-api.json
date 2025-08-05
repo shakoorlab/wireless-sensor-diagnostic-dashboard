@@ -2,6 +2,12 @@
   "family": "sensor-api",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
+
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX",
+    "cpuArchitecture": "ARM64"
+  },
+
   "cpu": "256",
   "memory": "512",
   "executionRoleArn": "arn:aws:iam::008329558714:role/ecsTaskExecutionRole",
@@ -11,29 +17,21 @@
       "image": "008329558714.dkr.ecr.us-east-1.amazonaws.com/sensor_backend:0.0.1",
       "portMappings": [{ "containerPort": 4000, "protocol": "tcp" }],
       "essential": true,
-
       "environment": [
         { "name": "NODE_ENV", "value": "production" },
         { "name": "PORT", "value": "4000" }
       ],
-
       "secrets": [
         { "name": "AUTH_URL", "valueFrom": "arn:aws:secretsmanager:us-east-1:008329558714:secret:sensor_backend_env:AUTH_URL::" },
-
         { "name": "CLIENT_ID", "valueFrom": "arn:aws:secretsmanager:us-east-1:008329558714:secret:sensor_backend_env:CLIENT_ID::" },
-
         { "name": "USERNAME", "valueFrom": "arn:aws:secretsmanager:us-east-1:008329558714:secret:sensor_backend_env:USERNAME::" },
-
         { "name": "PASSWORD", "valueFrom": "arn:aws:secretsmanager:us-east-1:008329558714:secret:sensor_backend_env:PASSWORD::" },
-
         {
           "name": "PHENODE_API_BASE_URL",
           "valueFrom": "arn:aws:secretsmanager:us-east-1:008329558714:secret:sensor_backend_env:PHENODE_API_BASE_URL::"
         },
-
         { "name": "MONGO_URI", "valueFrom": "arn:aws:secretsmanager:us-east-1:008329558714:secret:sensor_backend_env:MONGO_URI::" }
       ],
-
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {

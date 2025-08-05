@@ -2,6 +2,12 @@
   "family": "sensor-ingest",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
+
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX",
+    "cpuArchitecture": "ARM64"
+  },
+
   "cpu": "256",
   "memory": "512",
   "executionRoleArn": "arn:aws:iam::008329558714:role/ecsTaskExecutionRole",
@@ -9,13 +15,9 @@
     {
       "name": "ingest",
       "image": "008329558714.dkr.ecr.us-east-1.amazonaws.com/sensor_backend:0.0.1",
-
       "command": ["node", "src/jobs/ingest.js"],
-
       "essential": true,
-
       "environment": [{ "name": "NODE_ENV", "value": "production" }],
-
       "secrets": [
         { "name": "AUTH_URL", "valueFrom": "arn:aws:secretsmanager:us-east-1:008329558714:secret:sensor_backend_env:AUTH_URL::" },
         { "name": "CLIENT_ID", "valueFrom": "arn:aws:secretsmanager:us-east-1:008329558714:secret:sensor_backend_env:CLIENT_ID::" },
@@ -27,7 +29,6 @@
         },
         { "name": "MONGO_URI", "valueFrom": "arn:aws:secretsmanager:us-east-1:008329558714:secret:sensor_backend_env:MONGO_URI::" }
       ],
-
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
