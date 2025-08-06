@@ -26,17 +26,17 @@ export default defineConfig(({ mode }) => {
       global: 'window'
     },
     resolve: {
-    alias: [
-      {
-        find: /^~(.+)/,
-        replacement: path.join(process.cwd(), 'node_modules/$1')
-      },
-      {
-        find: /^src(.+)/,
-        replacement: path.join(process.cwd(), 'src/$1')
-      }
-    ]
-  },
+      alias: [
+        {
+          find: /^~(.+)/,
+          replacement: path.join(process.cwd(), 'node_modules/$1')
+        },
+        {
+          find: /^src(.+)/,
+          replacement: path.join(process.cwd(), 'src/$1')
+        }
+      ]
+    },
     base: API_URL,
     plugins: [react(), jsconfigPaths()]
   };
