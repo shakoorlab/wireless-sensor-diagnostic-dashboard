@@ -36,56 +36,38 @@ import MainCard from 'components/MainCard';
 import ScrollX from 'components/ScrollX';
 import { CSVExport, DebouncedInput, EmptyTable } from 'components/third-party/react-table';
 
-const handleChange = (event, newAlignment) => {
-  if (newAlignment) setSlot(newAlignment);
-};
+// utils import (for column headers)
+import { hours12amTo12pm } from '../../../../utils/tables/hours';
 
+// hooks import
+import { useHourlyStatus } from '../../../../hooks/useSelectedFieldMetrics';
+
+// ==============================|| REACT TABLE - FILTERING ||============================== //
 export const fuzzyFilter = (row, columnId, value, addMeta) => {
-  // rank the item
   const itemRank = rankItem(row.getValue(columnId), value);
-
-  // store the ranking info
   addMeta(itemRank);
-
-  // return if the item should be filtered in/out
   return itemRank.passed;
 };
 
 export const fuzzySort = (rowA, rowB, columnId) => {
   let dir = 0;
-
-  // only sort by rank if the column has ranking information
   if (rowA.columnFiltersMeta[columnId]) {
     dir = compareItems(rowA.columnFiltersMeta[columnId], rowB.columnFiltersMeta[columnId]);
   }
-
-  // provide an alphanumeric fallback for when the item ranks are equal
   return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
 };
 
 // ==============================|| REACT TABLE ||============================== //
-
 function ReactTable({ columns, data }) {
   const [columnFilters, setColumnFilters] = useState([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [slot, setSlot] = useState('hour');
   const [quantity, setQuantity] = useState('By volume');
 
-  const handleQuantity = (e) => {
-    setQuantity(e.target.value);
-  };
-
-  const handleChange = (event, newAlignment) => {
-    if (newAlignment) setSlot(newAlignment);
-  };
-
   const table = useReactTable({
     data,
     columns,
-    state: {
-      columnFilters,
-      globalFilter
-    },
+    state: { columnFilters, globalFilter },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
@@ -96,73 +78,62 @@ function ReactTable({ columns, data }) {
     globalFilterFn: fuzzyFilter
   });
 
-  let headers = [];
-  table.getAllColumns().map((columns) =>
-    headers.push({
-      label: typeof columns.columnDef.header === 'string' ? columns.columnDef.header : '#',
-      // @ts-ignore
-      key: columns.columnDef.accessorKey
-    })
-  );
+  // extract headers for CSVExport
+  const headers = table.getAllColumns().map((col) => ({
+    label: typeof col.columnDef.header === 'string' ? col.columnDef.header : '#',
+    key: col.columnDef.accessorKey
+  }));
 
   return (
     <MainCard content={false}>
-      <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" sx={{ padding: 2 }}>
+      <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" sx={{ p: 2 }}>
         <DebouncedInput
-          value={globalFilter ?? ''}
-          onFilterChange={(value) => setGlobalFilter(String(value))}
+          value={globalFilter}
+          onFilterChange={(v) => setGlobalFilter(String(v))}
           placeholder={`Search ${data.length} sensors...`}
         />
-
-        <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end" sx={{ padding: 2 }}>
-          <Select value={quantity} onChange={handleQuantity} size="small" sx={{ minWidth: 120 }}>
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ p: 2 }}>
+          <Select value={quantity} onChange={(e) => setQuantity(e.target.value)} size="small" sx={{ minWidth: 120 }}>
             <MenuItem value="By volume">Sensor Head</MenuItem>
             <MenuItem value="By margin">Soil Probes</MenuItem>
           </Select>
-          <ToggleButtonGroup exclusive onChange={handleChange} size="small" value={slot} justifyContent="flex-start">
-            <ToggleButton disabled={slot === 'hour'} value="hour" sx={{ px: 2, py: 0.5 }}>
+          <ToggleButtonGroup exclusive value={slot} onChange={(e, v) => v && setSlot(v)} size="small">
+            <ToggleButton disabled={slot === 'hour'} value="hour">
               Hour
             </ToggleButton>
-            <ToggleButton disabled={slot === 'day'} value="day" sx={{ px: 2, py: 0.5 }}>
+            <ToggleButton disabled={slot === 'day'} value="day">
               Day
             </ToggleButton>
-            <ToggleButton disabled={slot === 'week'} value="week" sx={{ px: 2, py: 0.5 }}>
+            <ToggleButton disabled={slot === 'week'} value="week">
               Week
             </ToggleButton>
-            <ToggleButton disabled={slot === 'month'} value="month" sx={{ px: 2, py: 0.5 }}>
+            <ToggleButton disabled={slot === 'month'} value="month">
               Month
             </ToggleButton>
           </ToggleButtonGroup>
-          <CSVExport {...{ data: table.getRowModel().rows.map((d) => d.original), headers, filename: 'filtering.csv' }} />
+          <CSVExport data={table.getRowModel().rows.map((d) => d.original)} headers={headers} filename="hourly.csv" />
         </Stack>
       </Stack>
       <ScrollX>
         <TableContainer component={Paper}>
           <Table>
-            <TableHead sx={{ minWidth: 120, whiteSpace: 'nowrap' }}>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableCell key={header.id} {...header.column.columnDef.meta}>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+            <TableHead sx={{ whiteSpace: 'nowrap' }}>
+              {table.getHeaderGroups().map((hg) => (
+                <TableRow key={hg.id}>
+                  {hg.headers.map((h) => (
+                    <TableCell key={h.id} {...h.column.columnDef.meta}>
+                      {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))}
             </TableHead>
-
             <TableBody>
               {table.getRowModel().rows.length > 0 ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        sx={{
-                          border: '0.5px solid lightgrey'
-                        }}
-                        key={cell.id}
-                        {...cell.column.columnDef.meta}
-                      >
+                      <TableCell key={cell.id} sx={{ border: '0.5px solid lightgrey' }} {...cell.column.columnDef.meta}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
@@ -170,23 +141,18 @@ function ReactTable({ columns, data }) {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell
-                    sx={{
-                      border: '1px solid black'
-                    }}
-                    colSpan={table.getAllColumns().length}
-                  >
+                  <TableCell colSpan={table.getAllColumns().length} sx={{ border: '1px solid black' }}>
                     <EmptyTable msg="No Data" />
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
             <TableFooter>
-              {table.getFooterGroups().map((footerGroup) => (
-                <TableRow key={footerGroup.id}>
-                  {footerGroup.headers.map((footer) => (
-                    <TableCell key={footer.id} {...footer.column.columnDef.meta}>
-                      {footer.isPlaceholder ? null : flexRender(footer.column.columnDef.header, footer.getContext())}
+              {table.getFooterGroups().map((fg) => (
+                <TableRow key={fg.id}>
+                  {fg.headers.map((f) => (
+                    <TableCell key={f.id} {...f.column.columnDef.meta}>
+                      {f.isPlaceholder ? null : flexRender(f.column.columnDef.header, f.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -199,15 +165,18 @@ function ReactTable({ columns, data }) {
   );
 }
 
-// ==============================|| REACT TABLE - FILTERING ||============================== //
+ReactTable.propTypes = {
+  columns: PropTypes.array,
+  data: PropTypes.array
+};
 
-import { hours12amTo12pm } from '../../../../utils/tables/hours';
-import { mockHourlyData } from '../../../../data/mockHourlyData';
-
+// ==============================|| REACT TABLE - Hourly ||============================== //
 export default function HourlyTable() {
-  const data = useMemo(() => mockHourlyData, []);
+  // 1) fetch the table data
+  const { data, error } = useHourlyStatus(23);
+  const tableData = useMemo(() => data ?? [], [data]);
 
-  // ──► build Name column
+  // ─── moved columns hook *above* the returns ─────────────────────────────
   const nameColumn = {
     header: 'Name',
     footer: 'Name',
@@ -215,39 +184,47 @@ export default function HourlyTable() {
     meta: {
       style: {
         position: 'sticky',
-        left: 0, // pin to the viewport’s left
-        zIndex: 100, // be above scrolling cells (body)
+        left: 0,
+        zIndex: 100,
         minWidth: 140,
-        background: '#F8F8F8' /* inherit lets MUI use the default table colours */
+        background: '#F8F8F8'
       }
     }
   };
-
-  // ──► build 12 AM --> 12 PM hour columns
   const hourColumns = hours12amTo12pm.map((label, idx) => ({
     header: label,
     footer: label,
     accessorKey: `h${idx.toString().padStart(2, '0')}`,
     meta: { style: { minWidth: 100 } },
-    // 👇 idx is closed over, so every column keeps its own hour number
     cell: ({ getValue }) => {
-      // any column **after** 5 AM (i.e. 6 AM and later) shows Pending
-      if (idx > 5) {
+      const val = getValue();
+      if (val === 'Reported') {
+        return <Chip color="success" label="Reported" size="small" variant="light" />;
+      }
+      if (val === 'Pending') {
         return <Chip color="info" label="Pending" size="small" variant="light" />;
       }
-
-      // original logic for the 12 AM – 5 AM columns
-      const val = getValue();
-      return val === 'Reported' ? (
-        <Chip color="success" label="Reported" size="small" variant="light" />
-      ) : (
-        <Chip color="error" label="No Data" size="small" variant="light" />
-      );
+      return <Chip color="error" label="No Data" size="small" variant="light" />;
     }
   }));
+  const columns = useMemo(() => [nameColumn, ...hourColumns], [nameColumn, hourColumns]);
 
-  const columns = useMemo(() => [nameColumn, ...hourColumns], []);
-  return <ReactTable {...{ data, columns }} />;
+  // 2) loading / error states
+  if (!data && !error) {
+    return (
+      <MainCard content={false}>
+        <Typography>Loading hourly data…</Typography>
+      </MainCard>
+    );
+  }
+  if (error) {
+    return (
+      <MainCard content={false}>
+        <Typography color="error">Failed to load hourly data</Typography>
+      </MainCard>
+    );
+  }
+
+  // 3) render the table with the live data
+  return <ReactTable data={tableData} columns={columns} />;
 }
-
-ReactTable.propTypes = { columns: PropTypes.array, data: PropTypes.array };
