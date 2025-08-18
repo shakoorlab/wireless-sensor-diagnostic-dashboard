@@ -5,12 +5,14 @@ import Chip from '@mui/material/Chip';
 
 // project import
 import MainCard from 'components/MainCard';
-import HourlyTable from 'sections/selected-field/tables/sensor_head/Hourly';
 
 import SensorActivityList from 'sections/selected-field/list/SensorActivityList';
 import ApexPieChart from 'sections/selected-field/apexchart/ApexPieChart';
 import SignalStrengthOverviewCard from 'sections/selected-field/rssi_snr/SignalStrengthOverviewCard';
 import Map from 'sections/selected-field/mapping/map';
+import TableFrame from 'sections/selected-field/tables/TableFrame';
+import Daily from 'sections/selected-field/tables/sensor_head/Daily';
+import Weekly from 'sections/selected-field/tables/sensor_head/Weekly';
 
 // ==============================|| SAMPLE PAGE ||============================== //
 
@@ -20,34 +22,26 @@ export default function SamplePage() {
       <Typography variant="h3">Climate Smart</Typography>
       <br />
       <Grid container spacing={2}>
-        <Grid item xs={12} md={6} xl={4}>
-          <MainCard title="% Reporting (75 total)">
+        <Grid item xs={12} md={6} lg={6} sx={{ display: 'flex' }}>
+          <MainCard title="% Reporting (42/48 total)" sx={{ flex: 1, minHeight: 450 }}>
             <ApexPieChart />
           </MainCard>
         </Grid>
-        <Grid item xs={12} md={6} lg={8}>
-          <SensorActivityList />
+
+        <Grid item xs={12} md={6} lg={6} sx={{ display: 'flex' }}>
+          <SensorActivityList cardProps={{ sx: { flex: 1, minHeight: 450 } }} />
         </Grid>
       </Grid>
       <br />
       <MainCard title="Sensor Data Reporting">
-        <Typography variant="body2">
-          The Wireless Sensor Network and its sensors report data every hour to the <strong>nearest PheNode tower</strong>, and then to{' '}
-          <strong>the cloud</strong>. The backend for this dashboard checks <strong>5-10 minutes after the hour</strong> has passed to allow
-          for latency. If{' '}
-          <Chip
-            label="No Data"
-            color="error"
-            size="small"
-            sx={{
-              height: 'auto', // let it size to the font
-              // fontWeight: 'bold',
-              backgroundColor: 'error.light',
-              verticalAlign: 'middle',
-              mx: 0.5 // small horizontal gap
-            }}
-          />{' '}
-          is reported once, it probably is okay. If{' '}
+        <Typography variant="body1">
+          The Wireless Sensor Network and its' sensors report data roughly every hour to the <strong>nearest PheNode tower</strong>, and
+          then to <strong>the cloud</strong>. Data from the sensors arrive an hour behind the current time (American/Chicago).
+          <br></br>
+          <br></br>
+          The backend for this dashboard checks <strong>5-10 minutes after the hour</strong> has passed to allow for latency. If the time is{' '}
+          <strong>4:00PM</strong>, wait until about <strong>4:15PM</strong> to see if a sensor has reported data for <strong>3PM</strong>.
+          If{' '}
           <Chip
             label="No Data"
             color="error"
@@ -61,19 +55,29 @@ export default function SamplePage() {
               mx: 0.5 // small horizontal gap
             }}
           />{' '}
-          is reported multiple hours in a row, then best to check the sensor. The table below shows the <strong>hourly data</strong> for the
-          last 23 hours.
+          is reported multiple hours in a row, then checking the sensor is strongly advised.
         </Typography>
       </MainCard>
       <br />
-      <HourlyTable />
+      <TableFrame
+        defaultView="hour"
+        views={{
+          hour: Daily,
+          week: Weekly
+          // month: Monthly
+        }}
+        quantityOptions={[
+          { value: 'head', label: 'Sensor Head' },
+          { value: 'probes', label: 'Soil Probes' }
+        ]}
+      />
       <br />
       <br />
       <Typography variant="h2">Sensor Signal Strength</Typography>
       <br />
       <Grid item xs={12} md={7} lg={8}>
         <MainCard title="RSSI vs SNR">
-          <Typography variant="body2">
+          <Typography variant="body1">
             <strong>RSSI Received Signal Strength Indicator (RSSI)</strong> is a measurement of the power present in a received radio
             signal. The RSSI is indicated by a negative dBm value. This value relates to the signal strength of the cellular signal from the
             tower to the modem. The higher the number, the better the signal (-70 dBm is excellent, -110dBm no signal).
