@@ -9,6 +9,8 @@ import Locales from 'components/Locales';
 import ScrollTop from 'components/ScrollTop';
 import Snackbar from 'components/@extended/Snackbar';
 import Notistack from 'components/third-party/Notistack';
+import ErrorBoundary from 'components/error-boundary/ErrorBoundary';
+import GlobalErrorCatcher from 'components/error-boundary/GlobalErrorCatcher';
 
 // auth-provider
 import { JWTProvider as AuthProvider } from 'contexts/JWTContext';
@@ -18,20 +20,20 @@ import { JWTProvider as AuthProvider } from 'contexts/JWTContext';
 export default function App() {
   return (
     <ThemeCustomization>
-      {/* <RTLLayout> */}
       <Locales>
         <ScrollTop>
           <AuthProvider>
-            <>
-              <Notistack>
-                <RouterProvider router={router} />
+            <Notistack>
+              <GlobalErrorCatcher>
+                <ErrorBoundary>
+                  <RouterProvider router={router} />
+                </ErrorBoundary>
                 <Snackbar />
-              </Notistack>
-            </>
+              </GlobalErrorCatcher>
+            </Notistack>
           </AuthProvider>
         </ScrollTop>
       </Locales>
-      {/* </RTLLayout> */}
     </ThemeCustomization>
   );
 }
